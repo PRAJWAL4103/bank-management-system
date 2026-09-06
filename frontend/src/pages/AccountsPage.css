@@ -1,0 +1,92 @@
+.accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-lg);
+}
+
+.acc-card {
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background: linear-gradient(145deg, rgba(59,130,246,0.07) 0%, rgba(6,182,212,0.03) 100%) !important;
+  transition: all var(--transition-base);
+}
+
+.acc-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-glow);
+}
+
+.acc-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.acc-type-label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-accent);
+}
+
+.acc-number {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.acc-number-value {
+  font-family: monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.acc-balance {
+  font-size: 2rem;
+  font-weight: 800;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: var(--space-sm) 0;
+}
+
+.acc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border);
+}
+
+.create-form {
+  padding: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+.create-form h3 {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.create-form-body {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-end;
+  margin-top: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.create-form-body .form-group {
+  flex: 1;
+  min-width: 200px;
+}

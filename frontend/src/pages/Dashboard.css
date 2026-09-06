@@ -1,0 +1,187 @@
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-greeting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-bottom: var(--space-2xl);
+}
+
+.dashboard-stats {
+  margin-bottom: var(--space-xl);
+}
+
+/* Chart + Quick Actions row */
+.dashboard-mid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.chart-card, .quick-actions-card {
+  padding: var(--space-xl);
+}
+
+.card-title {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  margin-bottom: var(--space-lg);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--font-size-xs);
+}
+
+.empty-chart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Quick actions */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-md);
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transition: all var(--transition-base);
+}
+
+.quick-action:hover {
+  background: var(--bg-glass-strong);
+  border-color: var(--border-accent);
+  transform: translateY(-2px);
+}
+
+.qa-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.qa-green { background: rgba(16,185,129,0.15); color: #34d399; }
+.qa-red   { background: rgba(239,68,68,0.15);  color: #f87171; }
+.qa-blue  { background: rgba(59,130,246,0.15);  color: #60a5fa; }
+.qa-purple{ background: rgba(99,102,241,0.15);  color: #818cf8; }
+
+/* Sections */
+.dashboard-section {
+  margin-bottom: var(--space-xl);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.section-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.section-link {
+  font-size: var(--font-size-sm);
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.section-link:hover { color: var(--accent-secondary); }
+
+/* Account cards row */
+.accounts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-lg);
+}
+
+.account-card {
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  background: linear-gradient(145deg, rgba(59,130,246,0.08) 0%, rgba(6,182,212,0.04) 100%) !important;
+}
+
+.account-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.account-type-chip {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.account-number {
+  font-family: monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary);
+}
+
+.account-balance {
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Empty state */
+.empty-state {
+  padding: var(--space-3xl);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.empty-icon { font-size: 3rem; }
+.empty-state h4 { font-size: var(--font-size-lg); }
+.empty-state p { color: var(--text-secondary); font-size: var(--font-size-sm); }
+
+@media (max-width: 1024px) {
+  .dashboard-mid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .dashboard-greeting { flex-direction: column; align-items: flex-start; }
+}

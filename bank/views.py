@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.hashers import make_password
 from bson import ObjectId
 
-from bank.models import User, Account
+from bank.models import User, Account, Transaction
 from bank.serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -18,9 +18,13 @@ from bank.serializers import (
     UserSerializer,
     UserProfileUpdateSerializer,
     CreateAccountSerializer,
-    AccountSerializer
+    AccountSerializer,
+    DepositSerializer,
+    WithdrawSerializer,
+    TransferSerializer,
+    TransactionSerializer
 )
-from bank.services.banking import AuthService, AccountService
+from bank.services.banking import AuthService, AccountService, TransactionService
 from bank.utils.responses import success_response, error_response
 from bank.utils.jwt_handler import generate_token, verify_token, get_user_from_token
 from bank.database import get_collection
@@ -71,7 +75,8 @@ class UserRegistrationView(APIView):
                 name=serializer.validated_data['name'],
                 email=serializer.validated_data['email'],
                 phone=serializer.validated_data.get('phone', ''),
-                password=serializer.validated_data['password']
+                password=serializer.validated_data['password'],
+                password_confirm=serializer.validated_data['password_confirm']
             )
             
             return success_response(
@@ -697,6 +702,295 @@ class AccountStatusView(APIView):
         except Exception as e:
             return error_response(
                 message="Failed to retrieve account status",
+                errors={'error': str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+# ============================================================================
+# TRANSACTION VIEWS (Phase 5)
+# ============================================================================
+
+
+class DepositView(APIView):
+    """
+    Deposit money into an account
+    POST /api/transactions/deposit/
+
+    Headers:
+    Authorization: Bearer <token>
+
+    Request:
+    {
+        "account_number": "1234567890",
+        "amount": 500.00,
+        "description": "Salary credit"
+    }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            serializer = DepositSerializer(data=request.data)
+            if not serializer.is_valid():
+                return error_response(
+                    message="Validation failed",
+                    errors=serializer.errors,
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+            result = TransactionService.deposit(
+                account_number=serializer.validated_data['account_number'],
+                amount=serializer.validated_data['amount'],
+                description=serializer.validated_data.get('description', 'Deposit')
+            )
+
+            return success_response(
+                message="Deposit successful",
+                data=result,
+                status_code=status.HTTP_200_OK
+            )
+
+        except ValueError as e:
+            return error_response(message=str(e), status_code=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return error_response(
+                message="Deposit failed",
+                errors={'error': str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class WithdrawView(APIView):
+    """
+    Withdraw money from an account
+    POST /api/transactions/withdraw/
+
+    Headers:
+    Authorization: Bearer <token>
+
+    Request:
+    {
+        "account_number": "1234567890",
+        "amount": 200.00,
+        "description": "ATM withdrawal"
+    }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            token = request.auth
+            user_data = get_user_from_token(str(token))
+            if not user_data:
+                return error_response(message="Invalid or expired token", status_code=status.HTTP_401_UNAUTHORIZED)
+
+            serializer = WithdrawSerializer(data=request.data)
+            if not serializer.is_valid():
+                return error_response(
+                    message="Validation failed",
+                    errors=serializer.errors,
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+            result = TransactionService.withdraw(
+                user_id=ObjectId(user_data['user_id']),
+                account_number=serializer.validated_data['account_number'],
+                amount=serializer.validated_data['amount'],
+                description=serializer.validated_data.get('description', 'Withdrawal')
+            )
+
+            return success_response(
+                message="Withdrawal successful",
+                data=result,
+                status_code=status.HTTP_200_OK
+            )
+
+        except ValueError as e:
+            return error_response(message=str(e), status_code=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return error_response(
+                message="Withdrawal failed",
+                errors={'error': str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class TransferView(APIView):
+    """
+    Transfer money between accounts
+    POST /api/transactions/transfer/
+
+    Headers:
+    Authorization: Bearer <token>
+
+    Request:
+    {
+        "sender_account": "1234567890",
+        "receiver_account": "0987654321",
+        "amount": 300.00,
+        "description": "Rent payment"
+    }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            token = request.auth
+            user_data = get_user_from_token(str(token))
+            if not user_data:
+                return error_response(message="Invalid or expired token", status_code=status.HTTP_401_UNAUTHORIZED)
+
+            sender_account = request.data.get('sender_account')
+            receiver_account = request.data.get('receiver_account')
+            amount = request.data.get('amount')
+            description = request.data.get('description', 'Transfer')
+
+            if not all([sender_account, receiver_account, amount]):
+                return error_response(
+                    message="sender_account, receiver_account and amount are required",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+            result = TransactionService.transfer(
+                user_id=ObjectId(user_data['user_id']),
+                sender_account=sender_account,
+                receiver_account=receiver_account,
+                amount=amount,
+                description=description
+            )
+
+            return success_response(
+                message="Transfer successful",
+                data=result,
+                status_code=status.HTTP_200_OK
+            )
+
+        except ValueError as e:
+            return error_response(message=str(e), status_code=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return error_response(
+                message="Transfer failed",
+                errors={'error': str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class TransactionHistoryView(APIView):
+    """
+    Get transaction history for a specific account
+    GET /api/transactions/<account_number>/
+
+    Headers:
+    Authorization: Bearer <token>
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, account_number):
+        try:
+            token = request.auth
+            user_data = get_user_from_token(str(token))
+            if not user_data:
+                return error_response(message="Invalid or expired token", status_code=status.HTTP_401_UNAUTHORIZED)
+
+            # Verify account ownership
+            AccountService.verify_account_ownership(ObjectId(user_data['user_id']), account_number)
+
+            page = int(request.query_params.get('page', 1))
+            page_size = int(request.query_params.get('page_size', 20))
+            skip = (page - 1) * page_size
+
+            transactions = TransactionService.get_account_transactions(
+                account_number=account_number,
+                skip=skip,
+                limit=page_size
+            )
+
+            serializer = TransactionSerializer(transactions, many=True)
+
+            return success_response(
+                message="Transaction history retrieved",
+                data={
+                    'transactions': serializer.data,
+                    'page': page,
+                    'page_size': page_size
+                },
+                status_code=status.HTTP_200_OK
+            )
+
+        except ValueError as e:
+            return error_response(message=str(e), status_code=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return error_response(
+                message="Failed to retrieve transactions",
+                errors={'error': str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class AllTransactionsView(APIView):
+    """
+    Get all transactions for the logged-in user across all their accounts
+    GET /api/transactions/
+
+    Headers:
+    Authorization: Bearer <token>
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            token = request.auth
+            user_data = get_user_from_token(str(token))
+            if not user_data:
+                return error_response(message="Invalid or expired token", status_code=status.HTTP_401_UNAUTHORIZED)
+
+            # Get all accounts for this user
+            accounts = AccountService.get_user_accounts(ObjectId(user_data['user_id']))
+            account_numbers = [a['account_number'] for a in accounts]
+
+            page = int(request.query_params.get('page', 1))
+            page_size = int(request.query_params.get('page_size', 20))
+            skip = (page - 1) * page_size
+
+            # Aggregate transactions across all accounts
+            from bank.database import get_collection
+            collection = get_collection('transactions')
+            query = {
+                '$or': [
+                    {'sender_account': {'$in': account_numbers}},
+                    {'receiver_account': {'$in': account_numbers}}
+                ]
+            }
+            transaction_type = request.query_params.get('type')
+            txn_status = request.query_params.get('status')
+            if transaction_type:
+                query['transaction_type'] = transaction_type
+            if txn_status:
+                query['status'] = txn_status
+
+            total = collection.count_documents(query)
+            transactions = list(
+                collection.find(query).sort('created_at', -1).skip(skip).limit(page_size)
+            )
+
+            serializer = TransactionSerializer(transactions, many=True)
+
+            return success_response(
+                message="Transactions retrieved",
+                data={
+                    'transactions': serializer.data,
+                    'total': total,
+                    'page': page,
+                    'page_size': page_size,
+                    'total_pages': (total + page_size - 1) // page_size
+                },
+                status_code=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return error_response(
+                message="Failed to retrieve transactions",
                 errors={'error': str(e)},
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

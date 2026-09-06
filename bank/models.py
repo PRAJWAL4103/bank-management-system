@@ -58,8 +58,10 @@ class User:
     @staticmethod
     def verify_password(stored_password, provided_password):
         """Verify password"""
-        salt = stored_password[:32]
+        # stored_password = salt_hex (32 chars) + hash_hex (64 chars)
+        salt_hex = stored_password[:32]
         stored_hash = stored_password[32:]
+        salt = bytes.fromhex(salt_hex)   # convert hex string back to bytes
         provided_hash = hashlib.pbkdf2_hmac(
             'sha256',
             provided_password.encode('utf-8'),
